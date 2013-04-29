@@ -37,7 +37,7 @@ TextLayer hourLayer4;
 
 int hour = 3;
 int min  = 34;
-int _y = 0; //for testing
+int _y = 80; //for testing
 
 
 // can only see hours less than 3 at the moment
@@ -65,7 +65,7 @@ void draw_hour(TextLayer *layer, int y) {
 void text_layer_update_callback() {
 
   layer_set_frame(&textLayer, GRect(0, _y ,144,168));
-  _y++;
+  _y--;
   draw_hour(&hourLayer0, 20);
   draw_hour(&hourLayer1, 50);
   draw_hour(&hourLayer2, 80);
@@ -87,10 +87,13 @@ void init_hours() {
 }
 
 
-void rulerLayer_update_callback (Layer *me, GContext* ctx) {
-  (void)me; // Prevents "unused" warnings.
+
+void drawRuler() {
+  GContext *ctx;
   int x = 0;
   int y = 0;
+  ctx = app_get_current_graphics_context();
+
 
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
 
@@ -105,12 +108,18 @@ void rulerLayer_update_callback (Layer *me, GContext* ctx) {
       else
         y = 30;
       graphics_draw_line(ctx, GPoint(19, x), GPoint(y, x));
+      //need to draw 24 hours at the hour pointsn of the timer
+      //make timerhandler move the view down
     }
   }
-  
 }
 
 
+void rulerLayer_update_callback (Layer *me, GContext* ctx) {
+  (void)me; // Prevents "unused" warnings.
+  drawRuler();
+  layer_set_frame(&rulerLayer, GRect(0, _y ,144,168));
+}
 
 void handle_init_app(AppContextRef ctx) {
   (void)ctx;
@@ -129,13 +138,10 @@ void handle_init_app(AppContextRef ctx) {
   init_hours();
   text_layer_update_callback();
 
-  //draw_hours();
+  drawRuler();
 
   timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
 
-  //draw_hour(&hourLayer1, 100);
-  //text_layer_init(hourLayer1, GRect(120,30,30,40));
-  //layer_add_child(&window.layer, &hourLayer1.layer);
 
 }
 
@@ -157,7 +163,9 @@ static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
 void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
     if (cookie == DEBUG_TIMER) {
      text_layer_update_callback();
-      _y = _y + 10;
+  drawRuler();
+
+      _y = _y - 10;
      timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
     }
 }
