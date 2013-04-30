@@ -24,10 +24,12 @@ PBL_APP_INFO(MY_UUID,
 AppTimerHandle timer_handle;
 #define DEBUG_TIMER 1
 
+#define GRADIENT 3 // distance each 5 min line apart
+
 Window window;
 
 Layer rulerLayer; // The board/grid
-Layer textLayer; // The board/grid
+Layer lineLayer; // The board/grid
 
 TextLayer hourLayer0;
 TextLayer hourLayer1;
@@ -35,25 +37,7 @@ TextLayer hourLayer2;
 TextLayer hourLayer3;
 TextLayer hourLayer4;
 TextLayer hourLayer5;
-TextLayer hourLayer6;
-TextLayer hourLayer7;
-TextLayer hourLayer8;
-TextLayer hourLayer9;
-TextLayer hourLayer10;
-TextLayer hourLayer11;
-TextLayer hourLayer12;
-TextLayer hourLayer13;
-TextLayer hourLayer14;
-TextLayer hourLayer15;
-TextLayer hourLayer16;
-TextLayer hourLayer17;
-TextLayer hourLayer18;
-TextLayer hourLayer19;
-TextLayer hourLayer20;
-TextLayer hourLayer21;
-TextLayer hourLayer22;
-TextLayer hourLayer23;
-TextLayer hourLayers[24];
+TextLayer hourLayers[6];
 
 
 char hourStr0[3];
@@ -62,160 +46,83 @@ char hourStr2[3];
 char hourStr3[3];
 char hourStr4[3];
 char hourStr5[3];
-char hourStr6[3];
-char hourStr7[3];
-char hourStr8[3];
-char hourStr9[3];
-char hourStr10[3];
-char hourStr11[3];
-char hourStr12[3];
-char hourStr13[3];
-char hourStr14[3];
-char hourStr15[3];
-char hourStr16[3];
-char hourStr17[3];
-char hourStr18[3];
-char hourStr19[3];
-char hourStr20[3];
-char hourStr21[3];
-char hourStr22[3];
-char hourStr23[3];
-char *hourStrings[24];
+char *hourStrings[6];
 
-int hour = 3;
+int hour = 4;
 int min  = 34;
-int _y = 80; //for testing
+int _y = 0;
 
 
-//
-// draws thVje hours on the screen, offset to the right position
-void draw_hour(TextLayer *layer, int y) {
-  text_layer_set_text(layer, "12");
+void init_hour(TextLayer *layer, int y) {
+  // 12 gradients per hour, subtract 5 to make the number roughly in the middle of the line
+  text_layer_init(layer, GRect(80, (y * (12 * GRADIENT)) - 5  ,60,20));
+  layer_add_child(&rulerLayer, &layer->layer);
+//  text_layer_set_text_color(layer, GColorWhite);
+// text_layer_set_background_color(layer, GColorBlack);
+  text_layer_set_text(layer, "x");
 }
 
-
-void text_layer_update_callback() {
-  layer_set_frame(&textLayer, GRect(0, _y ,144,168));
-  _y--;
+void set_hour_string(TextLayer *layer, char *str, int _hour) {
+  mini_snprintf(str, 20, ".%d.", _hour);
+  text_layer_set_text(layer, str);
 }
 
-void init_hour(TextLayer *layer, int y, char *value) {
- static char _str[10];
-  text_layer_init(layer, GRect(80, y * 10 ,30,60));
-  layer_add_child(&textLayer, &layer->layer);
-  text_layer_set_text_color(layer, COLOR_FOREGROUND);
-  mini_snprintf(_str, 20, "%d bpm", y);
-  text_layer_set_text(layer, value);
-}
-
-/*--------------------------------------------------
-* void init_hour2(int hour){
-*  static char _str[10];
-*   TextLayer _layer;
-*   text_layer_init(&_layer, GRect(80, hour * 10 ,30,60));
-*   layer_add_child(&textLayer, &_layer.layer);
-*   text_layer_set_text_color(&_layer, COLOR_FOREGROUND);
-*   mini_snprintf(_str, 20, ".%d bpm", hour);
-*   text_layer_set_text(&_layer, _str);
-* }
-*--------------------------------------------------*/
-
-/*--------------------------------------------------
-* void init_hours() {
-*   init_hour(&hourLayer0, 20);
-*   init_hour(&hourLayer1, 50);
-*   init_hour(&hourLayer2, 80);
-*   init_hour(&hourLayer3, 120);
-*   init_hour(&hourLayer4, 120);
-* }
-*--------------------------------------------------*/
-
-void init_hours3() {
+void init_hours() {
   hourLayers[0] = hourLayer0;
   hourLayers[1] = hourLayer1;
   hourLayers[2] = hourLayer2;
   hourLayers[3] = hourLayer3;
   hourLayers[4] = hourLayer4;
   hourLayers[5] = hourLayer5;
-  hourLayers[6] = hourLayer6;
-  hourLayers[7] = hourLayer7;
-  hourLayers[8] = hourLayer8;
-  hourLayers[9] = hourLayer9;
-  hourLayers[10] = hourLayer10;
-  hourLayers[11] = hourLayer11;
-  hourLayers[12] = hourLayer12;
-  hourLayers[13] = hourLayer13;
-  hourLayers[14] = hourLayer14;
-  hourLayers[15] = hourLayer15;
-  hourLayers[16] = hourLayer16;
-  hourLayers[17] = hourLayer17;
-  hourLayers[18] = hourLayer18;
-  hourLayers[19] = hourLayer19;
-  hourLayers[20] = hourLayer20;
-  hourLayers[21] = hourLayer21;
-  hourLayers[22] = hourLayer22;
-  hourLayers[23] = hourLayer23;
   hourStrings[0]  = hourStr0;
   hourStrings[1]  = hourStr1;
   hourStrings[2]  = hourStr2;
   hourStrings[3]  = hourStr3;
   hourStrings[4]  = hourStr4;
   hourStrings[5]  = hourStr5;
-  hourStrings[6]  = hourStr6;
-  hourStrings[7]  = hourStr7;
-  hourStrings[8]  = hourStr8;
-  hourStrings[9]  = hourStr9;
-  hourStrings[10] = hourStr10;
-  hourStrings[11] = hourStr11;
-  hourStrings[12] = hourStr12;
-  hourStrings[13] = hourStr13;
-  hourStrings[14] = hourStr14;
-  hourStrings[15] = hourStr15;
-  hourStrings[16] = hourStr16;
-  hourStrings[17] = hourStr17;
-  hourStrings[18] = hourStr18;
-  hourStrings[19] = hourStr19;
-  hourStrings[20] = hourStr20;
-  hourStrings[21] = hourStr21;
-  hourStrings[22] = hourStr22;
-  hourStrings[23] = hourStr23;
 
-  for(int i = 0; i < 24; i++) {
-    mini_snprintf(hourStrings[i], 3, "%d x", i);
-    init_hour(&hourLayers[i],  i, hourStrings[i]);
+  for (int i = 0; i < 6; i++) {
+    init_hour(&hourLayers[i], i);
+    set_hour_string(&hourLayers[i], hourStrings[i], i);
   }
 }
 
-/*--------------------------------------------------
-* void init_hours2() {
-*   for (int i = 0; i < 4; i++) {
-*     init_hour2(i);
-*   }
-* }
-*--------------------------------------------------*/
 
+
+// draws the current time line marker
+void drawLineLayer() {
+  GContext *ctx;
+  ctx = app_get_current_graphics_context();
+  graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
+  graphics_draw_line(ctx, GPoint(0, 100), GPoint(144, 100));
+  graphics_draw_line(ctx, GPoint(0, 101), GPoint(144, 101));
+
+}
 
 
 void drawRuler() {
   GContext *ctx;
+  ctx = app_get_current_graphics_context();
   int x = 0;
   int y = 0;
-  ctx = app_get_current_graphics_context();
-
+  int hour_layer_counter = 0; // the hour being drawn - this must always go 0,1,2,3,4,5 etc (
+                              // (regardless of the actual hour)
 
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
 
-  for (int j = 0; j < 50; j++ ) {
-
-    for (int i = 0; i < 12; i ++ ) {
-      x = x + 3;
-      if  (i  == 0)  {
-        y = 70;
-      } else if  (i % 3 == 0 ) 
-        y = 40;
+  for (int _hour = (hour-2); _hour < (hour + 6); _hour++, hour_layer_counter++ ) {
+    for (int _min = 0; _min < 59; _min= _min + 5 ) {
+      y = y + GRADIENT;
+      if  (_min  == 0)  {
+        x = 70;
+      } else if  (_min % 15 == 0 ) 
+        x = 40;
       else
-        y = 30;
-      graphics_draw_line(ctx, GPoint(19, x), GPoint(y, x));
+        x = 30;
+
+      graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
+      //set_hour_string(&hourLayers[_hour], hourStrings[_hour], _hour);
+      set_hour_string(&hourLayers[hour_layer_counter], hourStrings[hour_layer_counter], _hour);
       //need to draw 24 hours at the hour pointsn of the timer
       //make timerhandler move the view down
     }
@@ -225,8 +132,13 @@ void drawRuler() {
 
 void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
-  drawRuler();
   layer_set_frame(&rulerLayer, GRect(0, _y ,144,168));
+  drawRuler();
+}
+
+void lineLayer_update_callback (Layer *me, GContext* ctx) {
+  (void)me; // Prevents "unused" warnings.
+  drawLineLayer();
 }
 
 void handle_init_app(AppContextRef ctx) {
@@ -236,20 +148,21 @@ void handle_init_app(AppContextRef ctx) {
   window_stack_push(&window, true /* Animated */);
   window_set_background_color(&window, COLOR_BACKGROUND);
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
-  layer_init(&textLayer, window.layer.frame); // Associate with layer object and set dimensions
-layer_set_clips(&rulerLayer, false);
-  layer_set_frame(&rulerLayer, GRect(0, _y ,144,1068));
+  layer_set_clips(&rulerLayer, false);
   rulerLayer.update_proc = &rulerLayer_update_callback; // Set the drawing callback function for the layer.
   layer_add_child(&window.layer, &rulerLayer); // Add the child to the app's base window
-  layer_add_child(&window.layer, &textLayer); // Add the child to the app's base window
 
-  textLayer.update_proc = &text_layer_update_callback;
-  init_hours3();
-  text_layer_update_callback();
+  //layer_init(&lineLayer, window.layer.frame); // Associate with layer object and set dimensions
+  //layer_set_clips(&lineLayer, false);
+  //lineLayer.update_proc = &lineLayer_update_callback; // Set the drawing callback function for the layer.
+  //layer_add_child(&window.layer, &lineLayer); // Add the child to the app's base window
+
+//
+  init_hours();
 
   drawRuler();
 
-  timer_handle = app_timer_send_event(ctx, 200, DEBUG_TIMER); // and loop again
+ // timer_handle = app_timer_send_event(ctx, 200, DEBUG_TIMER); // and loop again
 
 
 }
@@ -263,28 +176,34 @@ static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
   // Note: This will cause the entire layer to be cleared first so it needs
   //       to be redrawn in its entirety--if you want to preserve drawn
   //       content you must have it on a different layer. e.g. board vs player layers.
-//  layer_mark_dirty(&playersLayer);
+  _y = _y - 1;
+  if (_y < ((12 * GRADIENT * -1))-5) {  // reset back to top if we get an hour down the screen
+    _y = 0;
+    hour++;
+  }
+  layer_mark_dirty(&rulerLayer);
+  //drawRuler();
 
   // TODO: Find out when the redraw actually occurs. Does it make any difference about order of these calls?
  // update_time_display();
 }
 
-void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
-    if (cookie == DEBUG_TIMER) {
-     text_layer_update_callback();
-  drawRuler();
-
-      _y = _y - 10;
-     timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
-    }
-}
-
+/*--------------------------------------------------
+* void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
+*     if (cookie == DEBUG_TIMER) {
+*       _y = _y + 1;
+*       rulerLayer_update_callback(&rulerLayer, ctx);
+*      timer_handle = app_timer_send_event(ctx, 200, DEBUG_TIMER); // and loop again
+*     }
+* }
+* 
+*--------------------------------------------------*/
 void pbl_main(void *params) {
   PebbleAppHandlers handlers = {
 
     // Handle app start
     .init_handler = &handle_init_app,
-    .timer_handler = &debug_timer,
+    //.timer_handler = &debug_timer,
 
     // Handle time updates
     .tick_info = {
