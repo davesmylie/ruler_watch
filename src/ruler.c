@@ -25,6 +25,7 @@ AppTimerHandle timer_handle;
 #define DEBUG_TIMER 1
 
 #define GRADIENT 3 // distance each 5 min line apart
+#define INITIAL_OFFSET  GRADIENT * 6 * 2
 
 Window window;
 
@@ -50,7 +51,6 @@ char *hourStrings[6];
 
 int hour = 4;
 int min  = 34;
-int _y = 0;
 
 
 void init_hour(TextLayer *layer, int y) {
@@ -76,14 +76,16 @@ void init_hours() {
   hourLayers[3] = hourLayer3;
   hourLayers[4] = hourLayer4;
   hourLayers[5] = hourLayer5;
+  hourLayers[6] = hourLayer5;
   hourStrings[0]  = hourStr0;
   hourStrings[1]  = hourStr1;
   hourStrings[2]  = hourStr2;
   hourStrings[3]  = hourStr3;
   hourStrings[4]  = hourStr4;
   hourStrings[5]  = hourStr5;
+  hourStrings[6]  = hourStr5;
 
-  for (int i = 0; i <= 5; i++) {
+  for (int i = 0; i <= 6; i++) {
     init_hour(&hourLayers[i], i);
   }
 }
@@ -111,7 +113,7 @@ void drawRuler() {
 
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
 
- for (int _hour = 0; _hour < 5; _hour++, hour_layer_counter++ ) {
+ for (int _hour = 0; _hour <= 5; _hour++, hour_layer_counter++ ) {
     for (int _min = 0; _min < 59; _min= _min + 5 ) {
       y = y + GRADIENT;
       if  (_min  == 0)  {
@@ -123,7 +125,6 @@ void drawRuler() {
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
       set_hour_string(&hourLayers[hour_layer_counter], hourStrings[hour_layer_counter], _hour);
- // text_layer_set_text(&hourLayers[hour_layer_counter], "str");
     }
   }
 }
@@ -131,7 +132,8 @@ void drawRuler() {
 
 void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
- // layer_set_frame(&rulerLayer, GRect(0, y_offset ,144,168));
+  int offset = ((min / 5) * GRADIENT) - INITIAL_OFFSET;
+  layer_set_frame(&rulerLayer, GRect(0, offset ,144,168));
   drawRuler();
 }
 
@@ -151,7 +153,7 @@ void handle_init_app(AppContextRef ctx) {
 
 
   //drawRuler();
-  //timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
+  timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
 
 
 }
@@ -176,6 +178,7 @@ void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
       min = min + 5;
       if (min > 55) { 
         hour = hour + 1;
+        min = 0;
       }
       if (hour > 23) {
         hour = 0;
@@ -189,7 +192,7 @@ void pbl_main(void *params) {
 
     // Handle app start
     .init_handler = &handle_init_app,
-    //.timer_handler = &debug_timer,
+    .timer_handler = &debug_timer,
 
     // Handle time updates
     .tick_info = {
