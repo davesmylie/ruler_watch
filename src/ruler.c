@@ -40,12 +40,12 @@ TextLayer hourLayer5;
 TextLayer hourLayers[6];
 
 
-char hourStr0[3];
-char hourStr1[3];
-char hourStr2[3];
-char hourStr3[3];
-char hourStr4[3];
-char hourStr5[3];
+char hourStr0[13];
+char hourStr1[13];
+char hourStr2[13];
+char hourStr3[13];
+char hourStr4[13];
+char hourStr5[13];
 char *hourStrings[6];
 
 int hour = 4;
@@ -62,8 +62,10 @@ void init_hour(TextLayer *layer, int y) {
   text_layer_set_text(layer, "x");
 }
 
+
+//currently seems to blow up on either line
 void set_hour_string(TextLayer *layer, char *str, int _hour) {
-  mini_snprintf(str, 20, ".%d.", _hour);
+  mini_snprintf(str, 20, "'%d' - %d:%d", _hour, hour, min);
   text_layer_set_text(layer, str);
 }
 
@@ -81,9 +83,8 @@ void init_hours() {
   hourStrings[4]  = hourStr4;
   hourStrings[5]  = hourStr5;
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i <= 5; i++) {
     init_hour(&hourLayers[i], i);
-    set_hour_string(&hourLayers[i], hourStrings[i], i);
   }
 }
 
@@ -110,7 +111,7 @@ void drawRuler() {
 
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
 
-  for (int _hour = (hour-2); _hour < (hour + 6); _hour++, hour_layer_counter++ ) {
+ for (int _hour = 0; _hour < 5; _hour++, hour_layer_counter++ ) {
     for (int _min = 0; _min < 59; _min= _min + 5 ) {
       y = y + GRADIENT;
       if  (_min  == 0)  {
@@ -121,10 +122,8 @@ void drawRuler() {
         x = 30;
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
-      //set_hour_string(&hourLayers[_hour], hourStrings[_hour], _hour);
       set_hour_string(&hourLayers[hour_layer_counter], hourStrings[hour_layer_counter], _hour);
-      //need to draw 24 hours at the hour pointsn of the timer
-      //make timerhandler move the view down
+ // text_layer_set_text(&hourLayers[hour_layer_counter], "str");
     }
   }
 }
@@ -132,14 +131,10 @@ void drawRuler() {
 
 void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
-  layer_set_frame(&rulerLayer, GRect(0, _y ,144,168));
+ // layer_set_frame(&rulerLayer, GRect(0, y_offset ,144,168));
   drawRuler();
 }
 
-void lineLayer_update_callback (Layer *me, GContext* ctx) {
-  (void)me; // Prevents "unused" warnings.
-  drawLineLayer();
-}
 
 void handle_init_app(AppContextRef ctx) {
   (void)ctx;
@@ -148,21 +143,15 @@ void handle_init_app(AppContextRef ctx) {
   window_stack_push(&window, true /* Animated */);
   window_set_background_color(&window, COLOR_BACKGROUND);
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
+  init_hours();
+
   layer_set_clips(&rulerLayer, false);
   rulerLayer.update_proc = &rulerLayer_update_callback; // Set the drawing callback function for the layer.
   layer_add_child(&window.layer, &rulerLayer); // Add the child to the app's base window
 
-  //layer_init(&lineLayer, window.layer.frame); // Associate with layer object and set dimensions
-  //layer_set_clips(&lineLayer, false);
-  //lineLayer.update_proc = &lineLayer_update_callback; // Set the drawing callback function for the layer.
-  //layer_add_child(&window.layer, &lineLayer); // Add the child to the app's base window
 
-//
-  init_hours();
-
-  drawRuler();
-
- // timer_handle = app_timer_send_event(ctx, 200, DEBUG_TIMER); // and loop again
+  //drawRuler();
+  //timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
 
 
 }
@@ -176,28 +165,25 @@ static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
   // Note: This will cause the entire layer to be cleared first so it needs
   //       to be redrawn in its entirety--if you want to preserve drawn
   //       content you must have it on a different layer. e.g. board vs player layers.
-  _y = _y - 1;
-  if (_y < ((12 * GRADIENT * -1))-5) {  // reset back to top if we get an hour down the screen
-    _y = 0;
-    hour++;
-  }
   layer_mark_dirty(&rulerLayer);
   //drawRuler();
 
-  // TODO: Find out when the redraw actually occurs. Does it make any difference about order of these calls?
- // update_time_display();
 }
 
-/*--------------------------------------------------
-* void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
-*     if (cookie == DEBUG_TIMER) {
-*       _y = _y + 1;
-*       rulerLayer_update_callback(&rulerLayer, ctx);
-*      timer_handle = app_timer_send_event(ctx, 200, DEBUG_TIMER); // and loop again
-*     }
-* }
-* 
-*--------------------------------------------------*/
+// in the timer, we fake time moving on
+void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
+    if (cookie == DEBUG_TIMER) {
+      min = min + 5;
+      if (min > 55) { 
+        hour = hour + 1;
+      }
+      if (hour > 23) {
+        hour = 0;
+      }
+     timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
+    }
+}
+
 void pbl_main(void *params) {
   PebbleAppHandlers handlers = {
 
