@@ -33,6 +33,9 @@ Layer rulerLayer; // The board/grid
 Layer lineLayer; // The board/grid
 Layer bgLayer;   // the bakcground
 
+TextLayer dbgTextLayer;
+char dbg[100];
+
 TextLayer hourLayer0;
 TextLayer hourLayer1;
 TextLayer hourLayer2;
@@ -50,8 +53,8 @@ char hourStr4[13];
 char hourStr5[13];
 char *hourStrings[6];
 
-int hour = 4;
-int min  = 35;
+int hour = 1;
+int min  = 0;
 int dbg_offset = 0;
 
 
@@ -119,6 +122,7 @@ void drawRuler() {
   GContext *ctx;
   ctx = app_get_current_graphics_context();
 
+  layer_set_bounds(&rulerLayer, GRect(0, 0 ,1440 ,1680));
 
 
 
@@ -130,18 +134,18 @@ void drawRuler() {
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
 
  //for (int _hour = 0; _hour <= 5; _hour++, hour_layer_counter++ ) {
- for (int _hour = hour + 6; _hour >= hour ; _hour--, hour_layer_counter++ ) {
+ for (int _hour = 0 ; _hour < 24 ; _hour++, hour_layer_counter++ ) {
     for (int _min = 0; _min < 59; _min= _min + 5 ) {
       y = y + GRADIENT;
       if  (_min  == 0)  {
-        x = 60;
+        x =  40 + (6  * _hour);
       } else if  (_min % 15 == 0 ) 
-        x = 40;
+        x = 35;
       else
         x = 30;
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
-      set_hour_string(&hourLayers[hour_layer_counter], hourStrings[hour_layer_counter], _hour - 2);
+       //set_hour_string(&hourLayers[hour_layer_counter], hourStrings[hour_layer_counter], _hour - 2);
     }
   }
 }
@@ -149,17 +153,18 @@ void drawRuler() {
 
 void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
-  int offset = ((min / 5) * GRADIENT) - INITIAL_OFFSET;
+ // int offset = (((hour * 60) + min) / 5) * GRADIENT ;
+  int offset = (( (hour * 60) + min) / 5) * GRADIENT * - 1 ;
   dbg_offset = offset;
-  layer_set_frame(&rulerLayer, GRect(20, offset ,144 - 40 ,168 - 40));
+  layer_set_frame(&rulerLayer, GRect(0, offset ,144  ,148));
   drawRuler();
+
 }
 
 
 void init_bg_layer() {
   layer_init(&bgLayer, window.layer.frame); // Associate with layer object and set dimensions
   //layer_set_clips(&bgLayer, false);
-  //layer_set_bounds(&rulerLayer, GRect(10, 10 ,144 - 20 ,168 - 20));
   lineLayer.update_proc = &draw_bg_layer; // Set the drawing callback function for the layer.
   layer_add_child(&window.layer, &bgLayer); // Add the child to the app's base window
 }
@@ -172,8 +177,10 @@ void init_line_layer() {
 }
 
 void init_ruler_layer() {
-  //layer_set_clips(&rulerLayer, false);
+  layer_set_clips(&rulerLayer, false);
   rulerLayer.update_proc = &rulerLayer_update_callback; // Set the drawing callback function for the layer.
+  layer_set_bounds(&rulerLayer, GRect(0, 0 ,1440 ,1680));
+  layer_set_frame(&rulerLayer, GRect(20, 20 ,1440 ,1680));
   layer_add_child(&window.layer, &rulerLayer); // Add the child to the app's base window
   //layer_set_frame(&rulerLayer, GRect(20, 20 ,144 - 40 ,168 - 40));
 
@@ -187,11 +194,16 @@ void handle_init_app(AppContextRef ctx) {
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
   init_hours();
 
-  init_bg_layer();
+  //init_bg_layer();
   init_ruler_layer();
-  init_line_layer();
+  //init_line_layer();
 
 
+
+  text_layer_init(&dbgTextLayer, GRect(0, 130, 144, 20));
+
+  layer_add_child(&window.layer, &dbgTextLayer.layer);
+  text_layer_set_text(&dbgTextLayer, "xxx");
 
   timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
 }
@@ -205,7 +217,7 @@ static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
   // Note: This will cause the entire layer to be cleared first so it needs
   //       to be redrawn in its entirety--if you want to preserve drawn
   //       content you must have it on a different layer. e.g. board vs player layers.
-  draw_bg_layer();
+  //draw_bg_layer();
   layer_mark_dirty(&rulerLayer);
   //drawRuler();
 
@@ -218,12 +230,14 @@ void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
       if (min >= 55) { 
         hour = hour + 1;
         min = 0;
-        drawRuler();
       }
       if (hour > 23) {
         hour = 0;
       }
-     timer_handle = app_timer_send_event(ctx, 2000, DEBUG_TIMER); // and loop again
+  mini_snprintf(dbg, 20, "%d, %d:%d", dbg_offset, hour, min);
+  text_layer_set_text(&dbgTextLayer, dbg);
+
+     timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
     }
 }
 
