@@ -292,7 +292,12 @@ void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   int offset = (( (hour * 60) + min) / 5) * GRADIENT * - 1 ;
   dbg_offset = offset;
   //layer_set_frame(&rulerLayer, GRect(0, offset ,144  ,148));
-  layer_set_frame(&rulerLayer, GRect(20, 20 ,100  ,100));
+  //set the frame to be the area on the screen that we want the 
+  //ruler lines  to be visible in (this has clipping off so we wont see
+  //anything outside this box)
+  layer_set_frame(&rulerLayer, GRect(5, 5 ,144-20  ,168-20));
+  // offset the bounds of the layer by the length needed to show the current 
+  // time
   layer_set_bounds(&rulerLayer, GRect(0, offset ,100 ,100));
   drawRuler();
 
@@ -360,7 +365,7 @@ void handle_init_app(AppContextRef ctx) {
   init_bg_layer();
   init_ruler_layer();
 
-  text_layer_init(&dbgTextLayer, GRect(40, 40, 100, 20));
+  text_layer_init(&dbgTextLayer, GRect(40, 40, 80, 20));
   layer_add_child(&window.layer, &dbgTextLayer.layer);
   text_layer_set_text(&dbgTextLayer, "xxx");
 
