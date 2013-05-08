@@ -68,7 +68,7 @@ TextLayer hourLayer26;
 TextLayer hourLayer27;
 TextLayer hourLayer28;
 TextLayer hourLayer29;
-TextLayer hourLayers[24];
+TextLayer hourLayers[29];
 
 
 char hourStr0[13];
@@ -104,7 +104,7 @@ char hourStr29[13];
 
 char *hourStrings[29];
 
-int hour = 16;
+int hour = 20;
 int min  = 0;
 int dbg_offset = 0;
 
@@ -139,7 +139,8 @@ void move_time(int direction) {
 
 void init_hour(TextLayer *layer, int y) {
   // 12 gradients per hour, subtract 5 to make the number roughly in the middle of the line
-  text_layer_init(layer, GRect(70, (y * (12 * GRADIENT)) - 5  ,70,40));
+  text_layer_init(layer, GRect(70, (y * (12 * GRADIENT)) - 5  ,70,20));
+  //text_layer_init(layer, GRect(70, (y * (12 * 2)) - 5  ,70,20));
   layer_add_child(&rulerLayer, &layer->layer);
   text_layer_set_background_color(layer, GColorClear);
   if (1) {
@@ -222,7 +223,7 @@ void init_hours() {
   hourStrings[29]  = hourStr29;
   //hourStrings[30]  = hourStr30;
 
-  for (int i = 0; i <= 30; i++) {
+  for (int i = 0; i < 30; i++) {
     init_hour(&hourLayers[i], i);
   }
 }
@@ -250,36 +251,29 @@ void draw_bg_layer() {
 }
 
 void drawRuler() {
+  
   GContext *ctx;
   ctx = app_get_current_graphics_context();
 
-  //layer_set_bounds(&rulerLayer, GRect(0, 0 ,1440 ,1680));
-
-  
-
   int x = 0;
   int y = 0;
-  int hour_layer_counter = 0; // the hour being drawn - this must always go 0,1,2,3,4,5 etc (
-                              // (regardless of the actual hour)
 
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
  // draw 29 hours worth of lines as we need to be able to have 23.59 get to the top of the screen
  // whilst still having the next few hours beneath it. (so hours 0-3 are duplicated)
  //for (int _hour = 0; _hour <= 5; _hour++, hour_layer_counter++ ) {
- for (int _hour = 0 ; _hour < 29 ; _hour++, hour_layer_counter++ ) {
+ for (int _hour = 0 ; _hour < 29 ; _hour++ ) {
     for (int _min = 0; _min < 59; _min= _min + 5 ) {
       y = y + GRADIENT;
       if  (_min  == 0)  {
-        x =  40; // + (6  * _hour);
+        x =  40; 
       } else if  (_min % 15 == 0 ) 
         x = 35;
       else
         x = 30;
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
-      // display the hours offset by 2 hours (ie layer0 says 2 oclock, layer1 says 3 oclock etc so that
-      // layer
-      //set_hour_string(&hourLayers[hour_layer_counter], hourStrings[hour_layer_counter], _hour );// + HOUR_OFFSET);
+      set_hour_string(&hourLayers[_hour], hourStrings[_hour], (_hour % 24) );
     }
   }
 }
@@ -296,7 +290,7 @@ void rulerLayer_update_callback (Layer *me, GContext* ctx) {
 }
 
 
-// single click - increment bpm
+// single click - increment time (for debugging)
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window_2) {
   (void)recognizer;
   (void)window_2;
@@ -304,7 +298,7 @@ void up_single_click_handler(ClickRecognizerRef recognizer, Window *window_2) {
 }
 
 
-// single click - decrement bpm
+// single click - decrement time (for debugging)
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
   (void)recognizer;
   (void)window;
@@ -358,7 +352,7 @@ void handle_init_app(AppContextRef ctx) {
 
 
 
-  text_layer_init(&dbgTextLayer, GRect(0, 130, 144, 20));
+  text_layer_init(&dbgTextLayer, GRect(0, 0, 144, 20));
 
   layer_add_child(&window.layer, &dbgTextLayer.layer);
   text_layer_set_text(&dbgTextLayer, "xxx");
