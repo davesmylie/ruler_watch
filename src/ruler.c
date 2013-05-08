@@ -139,7 +139,7 @@ void move_time(int direction) {
 
 void init_hour(TextLayer *layer, int y) {
   // 12 gradients per hour, subtract 5 to make the number roughly in the middle of the line
-  text_layer_init(layer, GRect(70, (y * (12 * GRADIENT)) - 5  ,70,20));
+  text_layer_init(layer, GRect(70, (y * (12 * GRADIENT)) - 5  ,30,20));
   //text_layer_init(layer, GRect(70, (y * (12 * 2)) - 5  ,70,20));
   layer_add_child(&rulerLayer, &layer->layer);
   text_layer_set_background_color(layer, GColorClear);
@@ -233,19 +233,18 @@ void init_hours() {
 // draws the current time line marker
 void lineLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
-
-
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
-  graphics_draw_line(ctx, GPoint(0, 105), GPoint(144, 105));
-  graphics_draw_line(ctx, GPoint(0, 106), GPoint(144, 106));
+  graphics_draw_line(ctx, GPoint(0, 115), GPoint(144, 115));
+  graphics_draw_line(ctx, GPoint(0, 116), GPoint(144, 116));
 }
 
 
-void draw_bg_layer() {
-  GContext *ctx;
-  ctx = app_get_current_graphics_context();
+void bgLayer_update_callback(Layer *layer, GContext* ctx) {
+  //GContext *ctx;
+ // ctx = app_get_current_graphics_context();
   graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
+  //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
+  graphics_fill_rect(ctx, layer->bounds, 0, GCornersAll);
   graphics_context_set_fill_color(ctx, GColorClear);
   graphics_fill_rect(ctx, GRect(10,5,144 - 20, 168 - 20) , 4, GCornersAll);
 }
@@ -273,7 +272,7 @@ void drawRuler() {
         x = 30;
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
-      set_hour_string(&hourLayers[_hour], hourStrings[_hour], (_hour % 24) );
+      set_hour_string(&hourLayers[_hour], hourStrings[_hour], ((_hour - 3) % 24) );
     }
   }
 }
@@ -317,8 +316,8 @@ void click_config_provider(ClickConfig **config, Window *window) {
 
 void init_bg_layer() {
   layer_init(&bgLayer, window.layer.frame); // Associate with layer object and set dimensions
-  //layer_set_clips(&bgLayer, false);
-  lineLayer.update_proc = &draw_bg_layer; // Set the drawing callback function for the layer.
+  layer_set_clips(&bgLayer, false);
+  lineLayer.update_proc = &bgLayer_update_callback; // Set the drawing callback function for the layer.
   layer_add_child(&window.layer, &bgLayer); // Add the child to the app's base window
 }
 
@@ -332,7 +331,8 @@ void init_line_layer() {
 void init_ruler_layer() {
   layer_set_clips(&rulerLayer, false);
   rulerLayer.update_proc = &rulerLayer_update_callback; // Set the drawing callback function for the layer.
-  layer_set_bounds(&rulerLayer, GRect(0, 0 ,144 ,2000));
+  //layer_set_bounds(&rulerLayer, GRect(0, 0 ,144 ,2000));
+  //layer_set_bounds(&rulerLayer, GRect(20, 20 ,44 ,40));
   layer_add_child(&window.layer, &rulerLayer); // Add the child to the app's base window
   //layer_set_frame(&rulerLayer, GRect(20, 20 ,144 - 40 ,168 - 40));
 
@@ -346,33 +346,23 @@ void handle_init_app(AppContextRef ctx) {
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
   init_hours();
 
-  //init_bg_layer();
+  init_bg_layer();
   init_ruler_layer();
-  //init_line_layer();
-
-
+  init_line_layer();
 
   text_layer_init(&dbgTextLayer, GRect(0, 0, 144, 20));
-
   layer_add_child(&window.layer, &dbgTextLayer.layer);
   text_layer_set_text(&dbgTextLayer, "xxx");
 
   timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
-
   window_set_click_config_provider(&window, (ClickConfigProvider) click_config_provider);
 }
 
 static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
   (void)ctx;
   (void)t;
-
-  // Causes a redraw of the layer (via the
-  // associated layer update callback)
-  // Note: This will cause the entire layer to be cleared first so it needs
-  //       to be redrawn in its entirety--if you want to preserve drawn
-  //       content you must have it on a different layer. e.g. board vs player layers.
   //draw_bg_layer();
-  layer_mark_dirty(&rulerLayer);
+  //layer_mark_dirty(&rulerLayer);
   //drawRuler();
 
 }
