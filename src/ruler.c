@@ -132,7 +132,10 @@ void move_time(int direction) {
     if (hour < 0) {
       hour = 23;
       min = 55;
+
     }
+  layer_mark_dirty(&bgLayer);
+  layer_mark_dirty(&rulerLayer);
   mini_snprintf(dbg, 20, "%d, %d:%d", dbg_offset, hour, min);
   text_layer_set_text(&dbgTextLayer, dbg);
 }
@@ -241,12 +244,17 @@ void lineLayer_update_callback (Layer *me, GContext* ctx) {
 
 void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   //GContext *ctx;
- // ctx = app_get_current_graphics_context();
+  // ctx = app_get_current_graphics_context();
   graphics_context_set_fill_color(ctx, GColorBlack);
   //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
   graphics_fill_rect(ctx, layer->bounds, 0, GCornersAll);
   graphics_context_set_fill_color(ctx, GColorClear);
   graphics_fill_rect(ctx, GRect(10,5,144 - 20, 168 - 20) , 4, GCornersAll);
+
+//  graphics_context_set_fill_color(ctx, GColorBlack);
+//  graphics_draw_round_rect(ctx, GRect(10,5,144 - 20, 168 - 30) , 1 );
+//  graphics_draw_round_rect(ctx, GRect(9,4,144 - 19, 168 - 29) , 1 );
+//  graphics_draw_round_rect(ctx, GRect(8,3,144 - 18, 168 - 28) , 1 );
 }
 
 void drawRuler() {
@@ -283,7 +291,9 @@ void rulerLayer_update_callback (Layer *me, GContext* ctx) {
  // int offset = (((hour * 60) + min) / 5) * GRADIENT ;
   int offset = (( (hour * 60) + min) / 5) * GRADIENT * - 1 ;
   dbg_offset = offset;
-  layer_set_frame(&rulerLayer, GRect(0, offset ,144  ,148));
+  //layer_set_frame(&rulerLayer, GRect(0, offset ,144  ,148));
+  layer_set_frame(&rulerLayer, GRect(20, 20 ,100  ,100));
+  layer_set_bounds(&rulerLayer, GRect(0, offset ,100 ,100));
   drawRuler();
 
 }
@@ -329,7 +339,7 @@ void init_line_layer() {
 }
 
 void init_ruler_layer() {
-  layer_set_clips(&rulerLayer, false);
+  //layer_set_clips(&rulerLayer, false);
   rulerLayer.update_proc = &rulerLayer_update_callback; // Set the drawing callback function for the layer.
   //layer_set_bounds(&rulerLayer, GRect(0, 0 ,144 ,2000));
   //layer_set_bounds(&rulerLayer, GRect(20, 20 ,44 ,40));
@@ -346,35 +356,23 @@ void handle_init_app(AppContextRef ctx) {
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
   init_hours();
 
+  init_line_layer();
   init_bg_layer();
   init_ruler_layer();
-  init_line_layer();
 
-  text_layer_init(&dbgTextLayer, GRect(0, 0, 144, 20));
+  text_layer_init(&dbgTextLayer, GRect(40, 40, 100, 20));
   layer_add_child(&window.layer, &dbgTextLayer.layer);
   text_layer_set_text(&dbgTextLayer, "xxx");
 
-  timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
   window_set_click_config_provider(&window, (ClickConfigProvider) click_config_provider);
 }
 
 static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
   (void)ctx;
   (void)t;
-  //draw_bg_layer();
-  //layer_mark_dirty(&rulerLayer);
-  //drawRuler();
-
+  // one day when the clock is working, do the tick update here...
 }
 
-// in the timer, we fake time moving on
-void debug_timer(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) {
-
-
-    if (cookie == DEBUG_TIMER) {
-     timer_handle = app_timer_send_event(ctx, 1000, DEBUG_TIMER); // and loop again
-    }
-}
 
 
 void pbl_main(void *params) {
@@ -382,7 +380,6 @@ void pbl_main(void *params) {
 
     // Handle app start
     .init_handler = &handle_init_app,
-    .timer_handler = &debug_timer,
 
     // Handle time updates
     .tick_info = {
