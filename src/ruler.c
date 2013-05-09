@@ -3,15 +3,22 @@
 #include "pebble_fonts.h"
 #include "mini-printf.h"
 
+#define DEBUG_MODE 1
+#ifndef DEBUG_MODE
+#define APP_TYPE APP_INFO_WATCH_FACE
+#else
+#define APP_TYPE APP_INFO_STANDARD_APP
+#endif
+
 
 #define MY_UUID { 0xE7, 0x5C, 0xA6, 0xAE, 0x04, 0xC8, 0x48, 0x35, 0xAD, 0x9F, 0xE0, 0xDB, 0xEC, 0x3F, 0x16, 0x74 }
 PBL_APP_INFO(MY_UUID,
              "Template App", "Your Company",
              1, 0, /* App version */
              DEFAULT_MENU_ICON,
-             APP_INFO_STANDARD_APP);
+             APP_TYPE);
 
-//#define INVERT_COLORS
+#define INVERT_COLORS
 
 #ifndef INVERT_COLORS
 #define COLOR_FOREGROUND GColorBlack
@@ -21,10 +28,7 @@ PBL_APP_INFO(MY_UUID,
 #define COLOR_BACKGROUND GColorBlack
 #endif
 
-AppTimerHandle timer_handle;
-#define DEBUG_TIMER 1
 
-#define DEBUG_MODE 0
 
 #define GRADIENT 3 // distance each 5 min line apart
 #define INITIAL_OFFSET  GRADIENT * 6 * 2
@@ -34,7 +38,6 @@ AppTimerHandle timer_handle;
 Window window;
 
 Layer rulerLayer; // The board/grid
-Layer lineLayer; // The board/grid
 Layer bgLayer;   // the bakcground
 
 TextLayer dbgTextLayer;
@@ -110,6 +113,25 @@ int hour = 20;
 int min  = 0;
 int dbg_offset = 0;
 
+// gets the system time and sets our hour/min variables
+void set_time(){
+  PblTm time;
+  get_time(&time);
+  hour = time.tm_hour;
+  min = time.tm_min;
+}
+
+// updates the time counters, marks layers dirty  and draws debug info
+void update_screen() {
+  set_time();
+  layer_mark_dirty(&bgLayer);
+  layer_mark_dirty(&rulerLayer);
+  if (DEBUG_MODE) {
+    mini_snprintf(dbg, 20, "%d, %d:%d", dbg_offset, hour, min);
+    text_layer_set_text(&dbgTextLayer, dbg);
+  }
+}
+
 
 // manually changes the time (for debugging)
 // direction hsould be 1 or -1
@@ -136,10 +158,7 @@ void move_time(int direction) {
       min = 55;
 
     }
-  layer_mark_dirty(&bgLayer);
-  layer_mark_dirty(&rulerLayer);
-  mini_snprintf(dbg, 20, "%d, %d:%d", dbg_offset, hour, min);
-  text_layer_set_text(&dbgTextLayer, dbg);
+    update_screen();
 }
 
 void init_hour(TextLayer *layer, int y) {
@@ -245,14 +264,14 @@ void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   //GContext *ctx;
   // ctx = app_get_current_graphics_context();
   int y = 76; // position of marker line
-  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_context_set_fill_color(ctx, COLOR_BACKGROUND);
   //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
   graphics_fill_rect(ctx, layer->bounds, 0, GCornersAll);
   graphics_context_set_fill_color(ctx, GColorClear);
   graphics_fill_rect(ctx, GRect(10,5,144 - 20, 168 - 20) , 4, GCornersAll);
 
   // draw the time marker line
-  graphics_context_set_stroke_color(ctx, GColorBlack);
+  graphics_context_set_stroke_color(ctx, COLOR_BACKGROUND);
   graphics_draw_line(ctx, GPoint(0, y), GPoint(144, y));
   graphics_draw_line(ctx, GPoint(0, y+1), GPoint(144, y+1));
 }
@@ -333,16 +352,10 @@ void click_config_provider(ClickConfig **config, Window *window) {
 
 void init_bg_layer() {
   layer_init(&bgLayer, window.layer.frame); // Associate with layer object and set dimensions
-  lineLayer.update_proc = &bgLayer_update_callback; // Set the drawing callback function for the layer.
+  bgLayer.update_proc = &bgLayer_update_callback; // Set the drawing callback function for the layer.
   layer_add_child(&window.layer, &bgLayer); // Add the child to the app's base window
 }
 
-void init_line_layer() {
-  layer_init(&lineLayer, window.layer.frame); // Associate with layer object and set dimensions
-  //layer_set_clips(&lineLayer, false);
-  lineLayer.update_proc = &lineLayer_update_callback; // Set the drawing callback function for the layer.
-  layer_add_child(&window.layer, &lineLayer); // Add the child to the app's base window
-}
 
 void init_ruler_layer() {
   rulerLayer.update_proc = &rulerLayer_update_callback; // Set the drawing callback function for the layer.
@@ -351,24 +364,6 @@ void init_ruler_layer() {
 }
 
 
-// gets the system time and sets our hour/min variables
-void set_time(){
-  PblTm time;
-  get_time(&time);
-  hour = time.tm_hour;
-  min = time.tm_min;
-}
-
-// updates the time counters, marks layers dirty  and draws debug info
-void update_screen() {
-  set_time();
-  layer_mark_dirty(&bgLayer);
-  layer_mark_dirty(&rulerLayer);
-  if (DEBUG_MODE) {
-    mini_snprintf(dbg, 20, "%d, %d:%d", dbg_offset, hour, min);
-    text_layer_set_text(&dbgTextLayer, dbg);
-  }
-}
 
 
 void handle_init_app(AppContextRef ctx) {
@@ -380,9 +375,6 @@ void handle_init_app(AppContextRef ctx) {
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
   init_hours();
 
-  //line layer isn't being used at all, but if we remove, things don't work????
-  //(the line is now drawn on  bg layer...
-  init_line_layer();
   init_bg_layer();
   init_ruler_layer();
 
@@ -402,7 +394,8 @@ void handle_init_app(AppContextRef ctx) {
 static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
   (void)ctx;
   (void)t;
-  update_screen();
+  if (! DEBUG_MODE) 
+    update_screen();
 }
 
 
