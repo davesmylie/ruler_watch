@@ -24,6 +24,8 @@ PBL_APP_INFO(MY_UUID,
 AppTimerHandle timer_handle;
 #define DEBUG_TIMER 1
 
+#define DEBUG_MODE 0
+
 #define GRADIENT 3 // distance each 5 min line apart
 #define INITIAL_OFFSET  GRADIENT * 6 * 2
 
@@ -142,14 +144,11 @@ void move_time(int direction) {
 
 void init_hour(TextLayer *layer, int y) {
   // 12 gradients per hour, subtract 5 to make the number roughly in the middle of the line
-  text_layer_init(layer, GRect(70, (y * (12 * GRADIENT)) - 5  ,30,20));
+  text_layer_init(layer, GRect(70, (y * (12 * GRADIENT)) - 15 ,40,30));
   //text_layer_init(layer, GRect(70, (y * (12 * 2)) - 5  ,70,20));
   layer_add_child(&rulerLayer, &layer->layer);
+  text_layer_set_font(layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_background_color(layer, GColorClear);
-  if (1) {
-    text_layer_set_text_color(layer, GColorWhite);
-    text_layer_set_background_color(layer, GColorBlack);
-  }
   text_layer_set_text(layer, "x");
 }
 
@@ -245,15 +244,17 @@ void lineLayer_update_callback (Layer *me, GContext* ctx) {
 void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   //GContext *ctx;
   // ctx = app_get_current_graphics_context();
+  int y = 76; // position of marker line
   graphics_context_set_fill_color(ctx, GColorBlack);
   //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
   graphics_fill_rect(ctx, layer->bounds, 0, GCornersAll);
   graphics_context_set_fill_color(ctx, GColorClear);
   graphics_fill_rect(ctx, GRect(10,5,144 - 20, 168 - 20) , 4, GCornersAll);
 
+  // draw the time marker line
   graphics_context_set_stroke_color(ctx, GColorBlack);
-  graphics_draw_line(ctx, GPoint(0, 115), GPoint(144, 115));
-  graphics_draw_line(ctx, GPoint(0, 116), GPoint(144, 116));
+  graphics_draw_line(ctx, GPoint(0, y), GPoint(144, y));
+  graphics_draw_line(ctx, GPoint(0, y+1), GPoint(144, y+1));
 }
 
 void drawRuler() {
@@ -272,14 +273,16 @@ void drawRuler() {
     for (int _min = 0; _min < 59; _min= _min + 5 ) {
       y = y + GRADIENT;
       if  (_min  == 0)  {
-        x =  40; 
-      } else if  (_min % 15 == 0 ) 
-        x = 35;
+        x =  60; 
+      } else if  (_min % 30 == 0 ) 
+        x = 45;
+       else if  (_min % 15 == 0 ) 
+        x = 40;
       else
         x = 30;
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
-      set_hour_string(&hourLayers[_hour], hourStrings[_hour], ((_hour - 3) % 24) );
+      set_hour_string(&hourLayers[_hour], hourStrings[_hour], ((_hour - 2) % 24) );
     }
   }
 }
@@ -346,6 +349,28 @@ void init_ruler_layer() {
   layer_add_child(&window.layer, &rulerLayer); // Add the child to the app's base window
 
 }
+
+
+// gets the system time and sets our hour/min variables
+void set_time(){
+  PblTm time;
+  get_time(&time);
+  hour = time.tm_hour;
+  min = time.tm_min;
+}
+
+// updates the time counters, marks layers dirty  and draws debug info
+void update_screen() {
+  set_time();
+  layer_mark_dirty(&bgLayer);
+  layer_mark_dirty(&rulerLayer);
+  if (DEBUG_MODE) {
+    mini_snprintf(dbg, 20, "%d, %d:%d", dbg_offset, hour, min);
+    text_layer_set_text(&dbgTextLayer, dbg);
+  }
+}
+
+
 void handle_init_app(AppContextRef ctx) {
   (void)ctx;
 
@@ -361,18 +386,25 @@ void handle_init_app(AppContextRef ctx) {
   init_bg_layer();
   init_ruler_layer();
 
-  text_layer_init(&dbgTextLayer, GRect(40, 40, 80, 20));
-  layer_add_child(&window.layer, &dbgTextLayer.layer);
-  text_layer_set_text(&dbgTextLayer, "xxx");
+  if (DEBUG_MODE) {
+    text_layer_init(&dbgTextLayer, GRect(40, 40, 80, 20));
+    layer_add_child(&window.layer, &dbgTextLayer.layer);
+    text_layer_set_text(&dbgTextLayer, "xxx");
+    window_set_click_config_provider(&window, (ClickConfigProvider) click_config_provider);
+  }
 
-  window_set_click_config_provider(&window, (ClickConfigProvider) click_config_provider);
+  update_screen();
 }
+
+
+
 
 static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
   (void)ctx;
   (void)t;
-  // one day when the clock is working, do the tick update here...
+  update_screen();
 }
+
 
 
 
