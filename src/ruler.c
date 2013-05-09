@@ -251,10 +251,9 @@ void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorClear);
   graphics_fill_rect(ctx, GRect(10,5,144 - 20, 168 - 20) , 4, GCornersAll);
 
-//  graphics_context_set_fill_color(ctx, GColorBlack);
-//  graphics_draw_round_rect(ctx, GRect(10,5,144 - 20, 168 - 30) , 1 );
-//  graphics_draw_round_rect(ctx, GRect(9,4,144 - 19, 168 - 29) , 1 );
-//  graphics_draw_round_rect(ctx, GRect(8,3,144 - 18, 168 - 28) , 1 );
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+  graphics_draw_line(ctx, GPoint(0, 115), GPoint(144, 115));
+  graphics_draw_line(ctx, GPoint(0, 116), GPoint(144, 116));
 }
 
 void drawRuler() {
@@ -331,7 +330,6 @@ void click_config_provider(ClickConfig **config, Window *window) {
 
 void init_bg_layer() {
   layer_init(&bgLayer, window.layer.frame); // Associate with layer object and set dimensions
-  layer_set_clips(&bgLayer, false);
   lineLayer.update_proc = &bgLayer_update_callback; // Set the drawing callback function for the layer.
   layer_add_child(&window.layer, &bgLayer); // Add the child to the app's base window
 }
@@ -344,12 +342,8 @@ void init_line_layer() {
 }
 
 void init_ruler_layer() {
-  //layer_set_clips(&rulerLayer, false);
   rulerLayer.update_proc = &rulerLayer_update_callback; // Set the drawing callback function for the layer.
-  //layer_set_bounds(&rulerLayer, GRect(0, 0 ,144 ,2000));
-  //layer_set_bounds(&rulerLayer, GRect(20, 20 ,44 ,40));
   layer_add_child(&window.layer, &rulerLayer); // Add the child to the app's base window
-  //layer_set_frame(&rulerLayer, GRect(20, 20 ,144 - 40 ,168 - 40));
 
 }
 void handle_init_app(AppContextRef ctx) {
@@ -361,6 +355,8 @@ void handle_init_app(AppContextRef ctx) {
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
   init_hours();
 
+  //line layer isn't being used at all, but if we remove, things don't work????
+  //(the line is now drawn on  bg layer...
   init_line_layer();
   init_bg_layer();
   init_ruler_layer();
