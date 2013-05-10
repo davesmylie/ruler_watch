@@ -6,10 +6,10 @@
 
 #define MY_UUID { 0xE7, 0x5C, 0xA6, 0xAE, 0x04, 0xC8, 0x48, 0x35, 0xAD, 0x9F, 0xE0, 0xDB, 0xEC, 0x3F, 0x16, 0x74 }
 PBL_APP_INFO(MY_UUID,
-             "Template App", "Your Company",
-             1, 0, /* App version */
-             DEFAULT_MENU_ICON,
-             APP_INFO_STANDARD_APP);
+             "Ruler", "Dave Smylie",
+             1, 2, /* App version */
+             RESOURCE_ID_IMAGE_MENU_ICON,
+             APP_INFO_WATCH_FACE);
 
 //#define INVERT_COLORS
 
