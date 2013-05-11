@@ -7,9 +7,10 @@
 #define MY_UUID { 0xE7, 0x5C, 0xA6, 0xAE, 0x04, 0xC8, 0x48, 0x35, 0xAD, 0x9F, 0xE0, 0xDB, 0xEC, 0x3F, 0x16, 0x74 }
 PBL_APP_INFO(MY_UUID,
              "Ruler", "Dave Smylie",
-             1, 2, /* App version */
+             1, 3, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
-             APP_INFO_WATCH_FACE);
+             APP_INFO_STANDARD_APP);
+             //APP_INFO_WATCH_FACE);
 
 //#define INVERT_COLORS
 
@@ -24,12 +25,14 @@ PBL_APP_INFO(MY_UUID,
 AppTimerHandle timer_handle;
 #define DEBUG_TIMER 1
 
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 #define GRADIENT 3 // distance each 5 min line apart
 #define INITIAL_OFFSET  GRADIENT * 6 * 2
 
 #define HOUR_OFFSET 2 // number of hours the time line marker should be down from the top of the screen
+
+
 
 Window window;
 
@@ -112,10 +115,9 @@ int dbg_offset = 0;
 
 
 // manually changes the time (for debugging)
-// direction hsould be 1 or -1
+// direction should be 1 or -1
 void move_time(int direction) {
     min = min + (5 * direction);
-    //hour = hour + direction;
 
     if (min >= 55) { 
       hour = hour + 1;
@@ -155,7 +157,12 @@ void init_hour(TextLayer *layer, int y) {
 
 //currently seems to blow up on either line
 void set_hour_string(TextLayer *layer, char *str, int _hour) {
-  //mini_snprintf(str, 20, "%d-%d:%d (%d)", _hour, hour, min, dbg_offset);
+  // convert to 12h format if that's what the phone is set to
+  if (!clock_is_24h_style()) {
+    _hour = (_hour % 12);
+    if (_hour == 0) _hour = 12;
+  }
+    
   mini_snprintf(str, 20, "%d", _hour);
   text_layer_set_text(layer, str);
 }
@@ -191,7 +198,6 @@ void init_hours() {
   hourLayers[27] = hourLayer27;
   hourLayers[28] = hourLayer28;
   hourLayers[29] = hourLayer29;
-  //hourLayers[30] = hourLayer30;
 
   hourStrings[0]  = hourStr0;
   hourStrings[1]  = hourStr1;
@@ -223,7 +229,6 @@ void init_hours() {
   hourStrings[27]  = hourStr27;
   hourStrings[28]  = hourStr28;
   hourStrings[29]  = hourStr29;
-  //hourStrings[30]  = hourStr30;
 
   for (int i = 0; i < 30; i++) {
     init_hour(&hourLayers[i], i);
@@ -235,21 +240,23 @@ void init_hours() {
 // draws the current time line marker
 void lineLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
+  int offset = 120;
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
-  graphics_draw_line(ctx, GPoint(0, 115), GPoint(144, 115));
-  graphics_draw_line(ctx, GPoint(0, 116), GPoint(144, 116));
+  graphics_draw_line(ctx, GPoint(0, offset), GPoint(144, offset));
+  offset++;
+  graphics_draw_line(ctx, GPoint(0, offset), GPoint(144, offset));
 }
 
 
 void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   //GContext *ctx;
   // ctx = app_get_current_graphics_context();
-  int y = 76; // position of marker line
+  int y = 80; // position of marker line
   graphics_context_set_fill_color(ctx, GColorBlack);
   //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
   graphics_fill_rect(ctx, layer->bounds, 0, GCornersAll);
   graphics_context_set_fill_color(ctx, GColorClear);
-  graphics_fill_rect(ctx, GRect(10,5,144 - 20, 168 - 20) , 4, GCornersAll);
+  graphics_fill_rect(ctx, GRect(5,5,144 - 10, 168 - 10) , 4, GCornersAll);
 
   // draw the time marker line
   graphics_context_set_stroke_color(ctx, GColorBlack);
@@ -264,6 +271,7 @@ void drawRuler() {
 
   int x = 0;
   int y = 0;
+  int display_hour;
 
   graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
  // draw 29 hours worth of lines as we need to be able to have 23.59 get to the top of the screen
@@ -282,7 +290,18 @@ void drawRuler() {
         x = 30;
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
-      set_hour_string(&hourLayers[_hour], hourStrings[_hour], ((_hour - 2) % 24) );
+
+      // we are displaying a rolling frame of 29 odd hour markers (to make sure
+      // we have extra numbers at the start and end to facillate rollinng around
+      // as we are displaying this two hours backwards (to make the time marker
+      // in the centre of the screen, we need to adjust the hour - make sure
+      // it's less than 24, and make sure it's greeater than one
+      // it doesn't display as -1 or -2, or 27 o'clock
+      display_hour = (_hour - 2) % 24;
+      if (display_hour < 0) display_hour = display_hour + 24;
+
+
+      set_hour_string(&hourLayers[_hour], hourStrings[_hour], display_hour  );
     }
   }
 }
@@ -297,7 +316,7 @@ void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   //set the frame to be the area on the screen that we want the 
   //ruler lines  to be visible in (this has clipping off so we wont see
   //anything outside this box)
-  layer_set_frame(&rulerLayer, GRect(5, 5 ,144-20  ,168-20));
+  layer_set_frame(&rulerLayer, GRect(5, 5 ,144-20  ,168-10));
   // offset the bounds of the layer by the length needed to show the current 
   // time
   layer_set_bounds(&rulerLayer, GRect(0, offset ,100 ,100));
@@ -353,10 +372,13 @@ void init_ruler_layer() {
 
 // gets the system time and sets our hour/min variables
 void set_time(){
-  PblTm time;
-  get_time(&time);
-  hour = time.tm_hour;
-  min = time.tm_min;
+  // don't use the system time in debug mode
+  if (!DEBUG_MODE) {
+    PblTm time;
+    get_time(&time);
+    hour = time.tm_hour;
+    min = time.tm_min;
+  }
 }
 
 // updates the time counters, marks layers dirty  and draws debug info
