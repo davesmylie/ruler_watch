@@ -25,7 +25,7 @@ PBL_APP_INFO(MY_UUID,
 AppTimerHandle timer_handle;
 #define DEBUG_TIMER 1
 
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 #define GRADIENT 3 // distance each 5 min line apart
 #define INITIAL_OFFSET  GRADIENT * 6 * 2
@@ -109,17 +109,17 @@ char hourStr29[13];
 
 char *hourStrings[29];
 
-int hour = 20;
-int min  = 0;
+int hour = 9;
+int min  = 37;
 int dbg_offset = 0;
 
 
 // manually changes the time (for debugging)
 // direction should be 1 or -1
 void move_time(int direction) {
-    min = min + (5 * direction);
+    min = min + (1 * direction);
 
-    if (min >= 55) { 
+    if (min >= 60) { 
       hour = hour + 1;
       min = 0;
     }
@@ -135,7 +135,7 @@ void move_time(int direction) {
 
     if (hour < 0) {
       hour = 23;
-      min = 55;
+      min = 59;
 
     }
   layer_mark_dirty(&bgLayer);
@@ -309,8 +309,9 @@ void drawRuler() {
 
 void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
- // int offset = (((hour * 60) + min) / 5) * GRADIENT ;
-  int offset = (( (hour * 60) + min) / 5) * GRADIENT * - 1 ;
+  int total_mins = ( (hour * 60) + min);
+  int offset = (total_mins / 5) * GRADIENT * - 1 ;
+
   dbg_offset = offset;
   //layer_set_frame(&rulerLayer, GRect(0, offset ,144  ,148));
   //set the frame to be the area on the screen that we want the 
@@ -421,7 +422,8 @@ void handle_init_app(AppContextRef ctx) {
 
 
 
-static void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
+// once a minute update position of the ruler on the screen
+static void handle_minute_tick(AppContextRef ctx, PebbleTickEvent *t) {
   (void)ctx;
   (void)t;
   update_screen();
@@ -438,8 +440,8 @@ void pbl_main(void *params) {
 
     // Handle time updates
     .tick_info = {
-      .tick_handler = &handle_second_tick,
-      .tick_units = SECOND_UNIT
+      .tick_handler = &handle_minute_tick,
+      .tick_units = MINUTE_UNIT
     }
   };
 
