@@ -23,19 +23,24 @@ PBL_APP_INFO(MY_UUID,
 #define COLOR_BACKGROUND GColorWhite
 #endif
 
-AppTimerHandle timer_handle;
-#define DEBUG_TIMER 1
-
 #define DEBUG_MODE 0
+#define PULSE_MODE 0
 
+#define LINE_LEVEL 80 // height of marker live.
 #define GRADIENT 4 // distance each 5 min line apart
-#define INITIAL_OFFSET  GRADIENT * 6 * 2
 
-#define HOUR_OFFSET 2 // number of hours the time line marker should be down from the top of the screen
+#define FUDGE      28  // changing the gradient should automatically adjust the scroll offself correctly
+                       // but it's leaving the screen too far down - move it back up by this much
+                       // (I can't see why - the maths here seems pretty straight forward...)
+
+//#define GRADIENT 3 // distance each 5 min line apart
+//#define FUDGE      0
+
 
 
 
 Window window;
+AppTimerHandle timer_handle;
 
 Layer rulerLayer; // The board/grid
 Layer lineLayer; // The board/grid
@@ -252,7 +257,7 @@ void lineLayer_update_callback (Layer *me, GContext* ctx) {
 void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   //GContext *ctx;
   // ctx = app_get_current_graphics_context();
-  int y = 80; // position of marker line
+  int y = LINE_LEVEL; // position of marker line
   if (INVERT_COLORS) {
     graphics_context_set_fill_color(ctx, GColorBlack);
   } else {
@@ -290,13 +295,14 @@ void drawRuler() {
       if  (_min  == 0)  {
         x =  60; 
       } else if  (_min % 30 == 0 ) 
-        x = 45;
+        x = 50;
        else if  (_min % 15 == 0 ) 
         x = 40;
       else
         x = 30;
 
       graphics_draw_line(ctx, GPoint(19, y), GPoint(x, y));
+
 
       // we are displaying a rolling frame of 29 odd hour markers (to make sure
       // we have extra numbers at the start and end to facillate rollinng around
@@ -317,7 +323,7 @@ void drawRuler() {
 void rulerLayer_update_callback (Layer *me, GContext* ctx) {
   (void)me; // Prevents "unused" warnings.
   int total_mins = ( (hour * 60) + min);
-  int offset = (total_mins / 5) * GRADIENT * - 1 ;
+  int offset = ((total_mins / 5) * GRADIENT * - 1) - FUDGE ;
 
   dbg_offset = offset;
   //layer_set_frame(&rulerLayer, GRect(0, offset ,144  ,148));
@@ -388,7 +394,7 @@ void set_time(){
     min = time.tm_min;
   }
 
-  if (min == 0) {
+  if (PULSE_MODE && min == 0) {
     vibes_short_pulse();
   }
 }
