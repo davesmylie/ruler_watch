@@ -28,7 +28,7 @@ AppTimerHandle timer_handle;
 
 #define DEBUG_MODE 0
 
-#define GRADIENT 3 // distance each 5 min line apart
+#define GRADIENT 4 // distance each 5 min line apart
 #define INITIAL_OFFSET  GRADIENT * 6 * 2
 
 #define HOUR_OFFSET 2 // number of hours the time line marker should be down from the top of the screen
@@ -150,7 +150,7 @@ void init_hour(TextLayer *layer, int y) {
   text_layer_init(layer, GRect(70, (y * (12 * GRADIENT)) - 15 ,40,30));
   //text_layer_init(layer, GRect(70, (y * (12 * 2)) - 5  ,70,20));
   layer_add_child(&rulerLayer, &layer->layer);
-  text_layer_set_font(layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_font(layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_background_color(layer, GColorClear);
   text_layer_set_text(layer, "x");
 }
