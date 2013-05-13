@@ -7,19 +7,20 @@
 #define MY_UUID { 0xE7, 0x5C, 0xA6, 0xAE, 0x04, 0xC8, 0x48, 0x35, 0xAD, 0x9F, 0xE0, 0xDB, 0xEC, 0x3F, 0x16, 0x74 }
 PBL_APP_INFO(MY_UUID,
              "Ruler", "Dave Smylie",
-             1, 3, /* App version */
+             1, 4, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
-             APP_INFO_STANDARD_APP);
-             //APP_INFO_WATCH_FACE);
+//             APP_INFO_STANDARD_APP);
+             APP_INFO_WATCH_FACE);
 
-//#define INVERT_COLORS
+#define INVERT_COLORS  0
 
 #ifndef INVERT_COLORS
-#define COLOR_FOREGROUND GColorBlack
-#define COLOR_BACKGROUND GColorWhite
-#else
+#define INVERT_COLORS  1
 #define COLOR_FOREGROUND GColorWhite
 #define COLOR_BACKGROUND GColorBlack
+#else
+#define COLOR_FOREGROUND GColorBlack
+#define COLOR_BACKGROUND GColorWhite
 #endif
 
 AppTimerHandle timer_handle;
@@ -252,14 +253,20 @@ void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   //GContext *ctx;
   // ctx = app_get_current_graphics_context();
   int y = 80; // position of marker line
-  graphics_context_set_fill_color(ctx, GColorBlack);
-  //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
-  graphics_fill_rect(ctx, layer->bounds, 0, GCornersAll);
-  graphics_context_set_fill_color(ctx, GColorClear);
-  graphics_fill_rect(ctx, GRect(5,5,144 - 10, 168 - 10) , 4, GCornersAll);
+  if (INVERT_COLORS) {
+    graphics_context_set_fill_color(ctx, GColorBlack);
+  } else {
+    graphics_context_set_fill_color(ctx, COLOR_FOREGROUND);
+    //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
+    graphics_fill_rect(ctx, layer->bounds, 0, GCornersAll);
+    graphics_context_set_fill_color(ctx, GColorClear);
+    graphics_fill_rect(ctx, GRect(5,5,144 - 10, 168 - 10) , 4, GCornersAll);
+
+  }
+
 
   // draw the time marker line
-  graphics_context_set_stroke_color(ctx, GColorBlack);
+  graphics_context_set_stroke_color(ctx, COLOR_FOREGROUND);
   graphics_draw_line(ctx, GPoint(0, y), GPoint(144, y));
   graphics_draw_line(ctx, GPoint(0, y+1), GPoint(144, y+1));
 }
@@ -379,6 +386,10 @@ void set_time(){
     get_time(&time);
     hour = time.tm_hour;
     min = time.tm_min;
+  }
+
+  if (min == 0) {
+    vibes_short_pulse();
   }
 }
 
