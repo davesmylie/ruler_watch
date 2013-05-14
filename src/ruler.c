@@ -7,12 +7,12 @@
 #define MY_UUID { 0xE7, 0x5C, 0xA6, 0xAE, 0x04, 0xC8, 0x48, 0x35, 0xAD, 0x9F, 0xE0, 0xDB, 0xEC, 0x3F, 0x16, 0x74 }
 PBL_APP_INFO(MY_UUID,
              "Ruler", "Dave Smylie",
-             1, 4, /* App version */
+             1, 5, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
-//             APP_INFO_STANDARD_APP);
+//           APP_INFO_STANDARD_APP);
              APP_INFO_WATCH_FACE);
 
-#define INVERT_COLORS  0
+//#define INVERT_COLORS  0
 
 #ifndef INVERT_COLORS
 #define INVERT_COLORS  1
@@ -157,6 +157,7 @@ void init_hour(TextLayer *layer, int y) {
   layer_add_child(&rulerLayer, &layer->layer);
   text_layer_set_font(layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_background_color(layer, GColorClear);
+  text_layer_set_text_color(layer, COLOR_FOREGROUND);
   text_layer_set_text(layer, "x");
 }
 
@@ -258,8 +259,10 @@ void bgLayer_update_callback(Layer *layer, GContext* ctx) {
   //GContext *ctx;
   // ctx = app_get_current_graphics_context();
   int y = LINE_LEVEL; // position of marker line
+  // when inverting, we don't want the inset color, as otherwise it would be
+  // black (plastic), white (screen), black (screen). Just make it all black
   if (INVERT_COLORS) {
-    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_context_set_fill_color(ctx, COLOR_BACKGROUND);
   } else {
     graphics_context_set_fill_color(ctx, COLOR_FOREGROUND);
     //graphics_fill_rect(ctx, GRect(0,0,144, 168), 0, GCornersAll);
@@ -418,10 +421,8 @@ void handle_init_app(AppContextRef ctx) {
   window_stack_push(&window, true /* Animated */);
   window_set_background_color(&window, COLOR_BACKGROUND);
   layer_init(&rulerLayer, window.layer.frame); // Associate with layer object and set dimensions
-  init_hours();
 
-  //line layer isn't being used at all, but if we remove, things don't work????
-  //(the line is now drawn on  bg layer...
+  init_hours();
   init_line_layer();
   init_bg_layer();
   init_ruler_layer();
