@@ -12,7 +12,7 @@ PBL_APP_INFO(MY_UUID,
 //           APP_INFO_STANDARD_APP);
              APP_INFO_WATCH_FACE);
 
-//#define INVERT_COLORS  0
+#define INVERT_COLORS  0
 
 #ifndef INVERT_COLORS
 #define INVERT_COLORS  1
@@ -24,7 +24,7 @@ PBL_APP_INFO(MY_UUID,
 #endif
 
 #define DEBUG_MODE 0
-#define PULSE_MODE 0
+#define PULSE_MODE 1
 
 #define LINE_LEVEL 80 // height of marker live.
 #define GRADIENT 4 // distance each 5 min line apart
